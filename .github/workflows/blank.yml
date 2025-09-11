@@ -8,13 +8,22 @@ jobs:
     runs-on: windows-2025
     steps:
       - name: Download AnyViewer
+        shell: pwsh
         run: |
-          curl -L -o anyviewer.msi https://download.anyviewer.com/anyviewer_setup.msi
+          $url = "https://dl.anyviewer.com/AnyViewerSetup.exe"
+          $output = "$env:TEMP\AnyViewerSetup.exe"
+          Write-Output "Downloading AnyViewer..."
+          Invoke-WebRequest -Uri $url -OutFile $output
+          Write-Output "Downloaded to $output"
 
       - name: Install AnyViewer
+        shell: pwsh
         run: |
-          msiexec /i anyviewer.msi /quiet /norestart
-          Start-Sleep -s 10
+          $installer = "$env:TEMP\AnyViewerSetup.exe"
+          Write-Output "Installing AnyViewer..."
+          Start-Process msiexec.exe -ArgumentList "/i `"$installer`" /quiet /norestart" -Wait
+          Write-Output "Installation complete."
+          Start-Sleep -Seconds 10
 
       - name: Configure AnyViewer (Password = bear)
         shell: pwsh
@@ -27,9 +36,10 @@ jobs:
           Set-Content -Path $configPath -Value "[general]`npassword=bear" -Encoding ASCII
 
       - name: Start AnyViewer
+        shell: pwsh
         run: |
           Start-Process "C:\Program Files (x86)\AnyViewer\AnyViewer.exe"
-          Start-Sleep -s 15
+          Start-Sleep -Seconds 15
 
       - name: Show Cloud PC Info
         shell: pwsh
