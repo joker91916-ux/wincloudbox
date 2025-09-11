@@ -38,8 +38,19 @@ jobs:
       - name: Start AnyViewer
         shell: pwsh
         run: |
-          Start-Process "C:\Program Files (x86)\AnyViewer\AnyViewer.exe"
-          Start-Sleep -Seconds 15
+          $possiblePaths = @(
+            "C:\Program Files\AnyViewer\AnyViewer.exe",
+            "C:\Program Files (x86)\AnyViewer\AnyViewer.exe"
+          )
+          $exe = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if ($exe) {
+            Write-Output "Starting AnyViewer from $exe"
+            Start-Process $exe
+            Start-Sleep -Seconds 15
+          } else {
+            Write-Error "AnyViewer.exe not found!"
+            exit 1
+          }
 
       - name: Show Cloud PC Info
         shell: pwsh
