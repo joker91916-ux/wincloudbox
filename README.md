@@ -1,49 +1,50 @@
-# ☁️ Cloud Computer (Windows 2025 + AnyViewer)
+# 💻 Cloud Computer – Your Own Free PC in the Cloud
 
-Spin up your own **Windows 2025 Cloud Computer** inside GitHub Actions!  
-This workflow installs **AnyViewer** with a fixed password and keeps the session alive for **6 hours**.  
-You can connect remotely just like a personal cloud PC. 🚀
+Don’t have a computer right now? No worries.  
+This repo gives you a **personal Windows 2025 machine** straight from GitHub’s cloud.  
+It’s like borrowing a high-end PC for a few hours — ready to use anytime. 🚀
 
 ---
 
-## 🔑 Features
-- Runs on **Windows Server 2025 GitHub runner**
-- Installs & configures **AnyViewer**
+## 🔑 What You Get
+- A fresh **Windows Server 2025** computer
+- Remote access via **AnyViewer**
 - Fixed password: `bear`
-- Prints your **Device ID** + **Password** in the logs
-- Keeps session alive for **6 hours**
+- Your **Device ID + Password** printed in workflow logs
+- Session stays alive for **6 hours**
 
 ---
 
-## 🖥️ How to Use
-1. Go to the **Actions** tab in this repo.
-2. Run the workflow **Cloud Computer** manually.
-3. Wait until the `Show AnyViewer Info` step — copy the **Device ID**.
-4. Download the [AnyViewer desktop app](https://www.anyviewer.com/download.html).
-5. Connect with:
-   - **Device ID:** from workflow logs
+## 🖥️ How to Start Your Cloud Computer
+1. Open the **Actions** tab in this repo.
+2. Run the **Cloud Computer** workflow manually.
+3. Wait until the **Show AnyViewer Info** step.
+4. Copy your **Device ID** from the logs.
+5. Install [AnyViewer](https://www.anyviewer.com/download.html) on your phone or PC.
+6. Connect using:
+   - **Device ID:** from logs  
    - **Password:** `bear`
-   - **Port:** default (handled automatically)
+
+That’s it — you’re inside your very own cloud computer! 🎉
 
 ---
 
-## ⏳ Session Time
-- Each run lasts **6 hours** (GitHub runner limit).
-- You can restart the workflow anytime for a fresh session.
+## ⏳ Session Duration
+- Each cloud PC lasts **6 hours** (GitHub runner limit).
+- Just re-run the workflow anytime for a new machine.
 
 ---
 
-## ⚠️ Notes
-- This is for **personal / educational use only**.
-- Files and settings are reset after each run (ephemeral runner).
-- Do not store sensitive data here — treat it like a disposable VM.
+## ⚠️ Important Notes
+- This is a **temporary disposable computer** — everything resets after the session.
+- Use it for learning, testing, or fun — not for storing sensitive files.
+- Think of it as your **personal laptop in the cloud**, always clean and ready.
 
 ---
 
-## 🚀 Example Use Cases
-- Try Windows Server 2025 in the cloud
-- Run apps without installing locally
-- Quick development / testing sandbox
-- Remote demo environments
+## 🚀 Why This Repo?
+- Great if you don’t own a computer but still need one.  
+- Test Windows apps without installing anything locally.  
+- Use it like a **cloud desktop** anywhere, anytime.  
 
 ---
