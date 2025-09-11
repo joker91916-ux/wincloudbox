@@ -7,33 +7,33 @@ jobs:
   setup-cloud-pc:
     runs-on: windows-2025
     steps:
-      - name: Download Supremo Portable
+      - name: Download AnyViewer Portable
         shell: pwsh
         run: |
-          $url = "https://www.nanosystems.it/public/download/Supremo.exe"
-          $output = "$env:TEMP\Supremo.exe"
-          Write-Output "Downloading Supremo Portable..."
+          $url = "https://dl.anyviewer.com/noinstall/AnyViewer.exe"
+          $output = "$env:TEMP\AnyViewer.exe"
+          Write-Output "Downloading AnyViewer Portable..."
           Invoke-WebRequest -Uri $url -OutFile $output
           Write-Output "Downloaded to $output"
 
-      - name: Configure Supremo (Password = bear)
+      - name: Configure AnyViewer (Password = bear)
         shell: pwsh
         run: |
-          $configPath = "$env:TEMP\Supremo.ini"
-          Write-Output "Configuring Supremo with password..."
+          $configPath = "$env:TEMP\AnyViewer.ini"
+          Write-Output "Configuring AnyViewer with password..."
           Set-Content -Path $configPath -Value "[general]`npassword=bear" -Encoding ASCII
 
-      - name: Start Supremo
+      - name: Start AnyViewer
         shell: pwsh
         run: |
-          $exe = "$env:TEMP\Supremo.exe"
-          $config = "$env:TEMP\Supremo.ini"
+          $exe = "$env:TEMP\AnyViewer.exe"
+          $config = "$env:TEMP\AnyViewer.ini"
           if (Test-Path $exe) {
-            Write-Output "Starting Supremo from $exe"
+            Write-Output "Starting AnyViewer..."
             Start-Process $exe -ArgumentList "/config $config"
             Start-Sleep -Seconds 15
           } else {
-            Write-Error "Supremo.exe not found!"
+            Write-Error "AnyViewer.exe not found!"
             exit 1
           }
 
@@ -46,9 +46,17 @@ jobs:
           Write-Output "   • RAM: 8–16 GB"
           Write-Output "   • Storage: 256 GB (C:) + smaller D: drive"
           Write-Output "   • CPU: AMD EPYC (2–4 vCores)"
-          Write-Output "🆔 Device ID: (check Supremo window)"
+
+          # Try to read AnyViewer Device ID from registry
+          $deviceId = (Get-ItemProperty "HKLM:\SOFTWARE\AnyViewer").DeviceID 2>$null
+          if ($deviceId) {
+            Write-Output "🆔 Device ID: $deviceId"
+          } else {
+            Write-Output "🆔 Device ID: (not detected yet, wait a few seconds after launch)"
+          }
+
           Write-Output "🔑 Password: bear"
-          Write-Output "📱 Connect using Supremo on your PC or phone."
+          Write-Output "📱 Connect using AnyViewer on your PC or phone."
 
       - name: Keep Alive for 6 Hours
         shell: pwsh
