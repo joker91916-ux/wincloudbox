@@ -57,7 +57,7 @@ jobs:
               $text = $sb.ToString()
               if ($text -match "Supremo ID: (\d+)") {
                   $supremoID = $matches[1]
-                  return $false # stop enumerating
+                  return $false
               }
               return $true
           }, [IntPtr]::Zero)
