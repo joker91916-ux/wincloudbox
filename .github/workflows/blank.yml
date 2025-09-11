@@ -1,0 +1,73 @@
+name: Windows-2025 Cloud Computer
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-cloud-pc:
+    runs-on: windows-2025
+    steps:
+      - name: Download AnyViewer
+        run: |
+          curl -L -o anyviewer.msi https://download.anyviewer.com/anyviewer_setup.msi
+
+      - name: Install AnyViewer
+        run: |
+          msiexec /i anyviewer.msi /quiet /norestart
+          Start-Sleep -s 10
+
+      - name: Configure AnyViewer (Password = bear)
+        run: |
+          $configPath = "$env:ProgramData\AnyViewer\anyviewer_config.ini"
+          if (-Not (Test-Path $env:ProgramData\AnyViewer)) {
+            New-Item -ItemType Directory -Path $env:ProgramData\AnyViewer -Force | Out-Null
+          }
+          @"
+[general]
+password=bear
+"@ | Set-Content -Path $configPath -Encoding ASCII
+
+      - name: Start AnyViewer
+        run: |
+          Start-Process "C:\Program Files (x86)\AnyViewer\AnyViewer.exe"
+          Start-Sleep -s 15
+
+      - name: Show Cloud PC Info
+        run: |
+          Write-Output "===================================="
+          Write-Output "     🚀 WELCOME TO YOUR CLOUD PC 🚀   "
+          Write-Output "===================================="
+          Write-Output ""
+          Write-Output "💻 Your personal Windows computer is ready to use!"
+          Write-Output ""
+          Write-Output "🖥️  Specs:"
+          Write-Output "   • OS: Windows Server 2025 (Cloud Edition)"
+          Write-Output "   • RAM: 8–16 GB"
+          Write-Output "   • Storage: 256 GB (main C: drive) + smaller D: drive"
+          Write-Output "   • CPU: AMD EPYC (2–4 vCores)"
+          Write-Output ""
+          # Try to read Device ID from registry
+          $deviceId = (Get-ItemProperty "HKLM:\SOFTWARE\AnyViewer").DeviceID 2>$null
+          if ($deviceId) {
+            Write-Output "🆔 Device ID: $deviceId"
+          } else {
+            Write-Output "🆔 Device ID: (could not detect, check AnyViewer window)"
+          }
+          Write-Output "🔑 Password: bear"
+          Write-Output ""
+          Write-Output "✨ How to connect:"
+          Write-Output "   1. Install AnyViewer on your PC or phone"
+          Write-Output "   2. Enter the Device ID above"
+          Write-Output "   3. Use password: bear"
+          Write-Output ""
+          Write-Output "👉 Boom! You’re inside your own personal cloud computer."
+          Write-Output "===================================="
+
+      - name: Keep Alive for 6 Hours
+        run: |
+          $hours = 6
+          $minutes = $hours * 60
+          for ($i = 1; $i -le $minutes; $i++) {
+            Write-Output "[$i/$minutes] ⏳ Your cloud computer is still running... do whatever you want inside!"
+            Start-Sleep -Seconds 60
+          }
