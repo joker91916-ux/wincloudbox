@@ -40,6 +40,7 @@ jobs:
           $installer = "$env:TEMP\tailscale-setup.exe"
           Invoke-WebRequest "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile $installer
           Start-Process msiexec.exe -ArgumentList "/i `"$installer`" /quiet /norestart" -Wait
+          Write-Output "Tailscale installed"
 
       - name: 🔑 Authenticate Tailscale
         shell: powershell
@@ -48,8 +49,13 @@ jobs:
               "C:\Program Files (x86)\Tailscale IPN\tailscale.exe",
               "C:\Program Files\Tailscale IPN\tailscale.exe"
           )
-          $tailscaleExe = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $tailscaleExe) { Write-Error "Tailscale executable not found!"; exit 1 }
+          $tailscaleExe = $null
+          $timeout = (Get-Date).AddSeconds(30)
+          while (-not $tailscaleExe -and (Get-Date) -lt $timeout) {
+              $tailscaleExe = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1
+              if (-not $tailscaleExe) { Start-Sleep -Seconds 2 }
+          }
+          if (-not $tailscaleExe) { Write-Error "Tailscale executable not found after 30 seconds!"; exit 1 }
 
           Start-Process $tailscaleExe -ArgumentList "up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:COMPUTERNAME" -Wait
           Write-Output "Tailscale node authenticated"
