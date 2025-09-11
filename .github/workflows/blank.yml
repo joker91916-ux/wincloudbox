@@ -7,45 +7,30 @@ jobs:
   setup-cloud-pc:
     runs-on: windows-2025
     steps:
-      - name: Download AnyViewer
+      - name: Download AnyViewer Portable
         shell: pwsh
         run: |
-          $url = "https://dl.anyviewer.com/AnyViewerSetup.exe"
-          $output = "$env:TEMP\AnyViewerSetup.exe"
-          Write-Output "Downloading AnyViewer..."
+          $url = "https://dl.anyviewer.com/noinstall/AnyViewer.exe"
+          $output = "$env:TEMP\AnyViewer.exe"
+          Write-Output "Downloading AnyViewer Portable..."
           Invoke-WebRequest -Uri $url -OutFile $output
           Write-Output "Downloaded to $output"
-
-      - name: Install AnyViewer
-        shell: pwsh
-        run: |
-          $installer = "$env:TEMP\AnyViewerSetup.exe"
-          Write-Output "Installing AnyViewer..."
-          Start-Process msiexec.exe -ArgumentList "/i `"$installer`" /quiet /norestart" -Wait
-          Write-Output "Installation complete."
-          Start-Sleep -Seconds 10
 
       - name: Configure AnyViewer (Password = bear)
         shell: pwsh
         run: |
-          $configPath = "$env:ProgramData\AnyViewer\anyviewer_config.ini"
-          if (-Not (Test-Path $env:ProgramData\AnyViewer)) {
-              New-Item -ItemType Directory -Path $env:ProgramData\AnyViewer -Force | Out-Null
-          }
-          # Create config file with password
+          $configPath = "$env:TEMP\AnyViewer.ini"
+          Write-Output "Configuring AnyViewer with password..."
           Set-Content -Path $configPath -Value "[general]`npassword=bear" -Encoding ASCII
 
       - name: Start AnyViewer
         shell: pwsh
         run: |
-          $possiblePaths = @(
-            "C:\Program Files\AnyViewer\AnyViewer.exe",
-            "C:\Program Files (x86)\AnyViewer\AnyViewer.exe"
-          )
-          $exe = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if ($exe) {
+          $exe = "$env:TEMP\AnyViewer.exe"
+          $config = "$env:TEMP\AnyViewer.ini"
+          if (Test-Path $exe) {
             Write-Output "Starting AnyViewer from $exe"
-            Start-Process $exe
+            Start-Process $exe -ArgumentList "/config $config"
             Start-Sleep -Seconds 15
           } else {
             Write-Error "AnyViewer.exe not found!"
@@ -61,14 +46,7 @@ jobs:
           Write-Output "   • RAM: 8–16 GB"
           Write-Output "   • Storage: 256 GB (C:) + smaller D: drive"
           Write-Output "   • CPU: AMD EPYC (2–4 vCores)"
-          
-          # Try to read Device ID from registry
-          $deviceId = (Get-ItemProperty "HKLM:\SOFTWARE\AnyViewer").DeviceID 2>$null
-          if ($deviceId) {
-            Write-Output "🆔 Device ID: $deviceId"
-          } else {
-            Write-Output "🆔 Device ID: (could not detect, check AnyViewer window)"
-          }
+          Write-Output "🆔 Device ID: (check AnyViewer window)"
           Write-Output "🔑 Password: bear"
           Write-Output "📱 Connect using AnyViewer on your PC or phone."
 
