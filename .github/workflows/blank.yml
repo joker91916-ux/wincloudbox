@@ -1,4 +1,4 @@
-name: Windows-2025 Personal Cloud PC (Tailscale via WSL + RDP)
+name: Windows-2025 Personal Cloud PC (Tailscale + RDP)
 
 on:
   workflow_dispatch:
@@ -40,18 +40,18 @@ jobs:
           Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-      - name: ⚡ Installing Tailscale in WSL
+      - name: ⚡ Installing Tailscale
         shell: powershell
         run: |
-          wsl --install -d Ubuntu
-          wsl sudo apt-get update
-          wsl sudo apt-get install -y curl gnupg lsb-release
-          wsl curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/jammy.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg > /dev/null
-          wsl curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/jammy.list | sudo tee /etc/apt/sources.list.d/tailscale.list
-          wsl sudo apt-get update
-          wsl sudo apt-get install -y tailscale
-          # Start Tailscale with auth key
-          wsl sudo tailscale up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:PC_NAME --accept-routes
+          $tailscaleInstaller = "$env:TEMP\tailscale-setup.exe"
+          Invoke-WebRequest "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile $tailscaleInstaller
+          Start-Process $tailscaleInstaller -ArgumentList "/quiet /norestart" -Wait
+
+          # Start Tailscale service
+          Start-Service Tailscale
+
+          # Authenticate Tailscale
+          & "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:PC_NAME --accept-routes
 
       - name: 🚀 Finalizing Cloud PC
         shell: powershell
@@ -59,10 +59,13 @@ jobs:
           $username = "CloudPCUSER"
           $password = "WindowsCloudPC#2025"
           $pcName = $env:PC_NAME
+          $tailscaleExe = "C:\Program Files (x86)\Tailscale IPN\tailscale.exe"
+
+          Start-Sleep -Seconds 10
           $endTime = (Get-Date).AddHours(5)
           while ((Get-Date) -lt $endTime) {
-              $tailscaleIP = wsl tailscale ip -4
-              $tailscaleNodeName = wsl tailscale status | Select-String "hostname:" | ForEach-Object { ($_ -split ":")[1].Trim() }
+              $tailscaleIP = (& $tailscaleExe ip -4).Trim()
+              $tailscaleNodeName = (& $tailscaleExe status | Select-String "hostname:" | ForEach-Object { ($_ -split ":")[1].Trim() })
               Write-Output "Your personal Cloud PC $pcName is ready!"
               Write-Output "Login user: $username"
               Write-Output "Password: $password"
