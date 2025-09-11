@@ -1,68 +1,77 @@
-name: Windows-2025 Personal Cloud PC (Supremo)
+name: Windows-2025 Personal Cloud PC (Tailscale + RDP)
 
 on:
   workflow_dispatch:
     inputs:
-      pin:
-        description: 'PIN for your Cloud PC (4-6 digits)'
+      tailscale_auth_key:
+        description: "Tailscale auth key"
         required: true
-      name:
-        description: 'Friendly name for your Cloud PC'
+      pc_name:
+        description: "Friendly name for your Cloud PC"
         required: true
 
 jobs:
   cloud-pc-job:
     runs-on: windows-2025
     steps:
-      - name: ☁️ Cloud PC: Download Supremo
+      - name: ☁️ Cloud PC: Set Windows PC Name
         shell: pwsh
         run: |
-          $url = "https://www.nanosystems.it/public/download/Supremo.exe"
-          $output = "$env:TEMP\Supremo.exe"
-          Write-Output "Downloading Supremo..."
-          Invoke-WebRequest -Uri $url -OutFile $output
-          Write-Output "Supremo downloaded to $output"
+          $pcName = "${{ github.event.inputs.pc_name }}"
+          Rename-Computer -NewName $pcName -Force -Restart:$false
+          Write-Output "PC name set to '$pcName'"
 
-      - name: ⚡ Cloud PC: Start Supremo
+      - name: ⚡ Cloud PC: Create CloudPCUSER
+        shell: pwsh
+        run: |
+          $username = "CloudPCUSER"
+          $password = "WindowsCloudPC#2025"
+          
+          if (-not (Get-LocalUser -Name $username -ErrorAction SilentlyContinue)) {
+              New-LocalUser -Name $username -Password (ConvertTo-SecureString $password -AsPlainText -Force) -FullName "Cloud PC User" -Description "Personal Cloud PC User"
+              Add-LocalGroupMember -Group "Administrators" -Member $username
+              Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
+              Write-Output "User '$username' created and added to Administrators & Remote Desktop Users groups"
+          } else {
+              Write-Output "User '$username' already exists"
+          }
+
+      - name: 🌐 Cloud PC: Install Tailscale
+        shell: pwsh
+        run: |
+          $tailscaleInstaller = "$env:TEMP\tailscale-setup.exe"
+          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile $tailscaleInstaller
+          Start-Process -FilePath $tailscaleInstaller -ArgumentList "/quiet /norestart" -Wait
+          Write-Output "Tailscale installed"
+
+      - name: 🔑 Cloud PC: Authenticate Tailscale
         shell: pwsh
         env:
-          CLOUDPC_PIN: ${{ github.event.inputs.pin }}
-          CLOUDPC_NAME: ${{ github.event.inputs.name }}
+          TAILSCALE_AUTH_KEY: ${{ github.event.inputs.tailscale_auth_key }}
         run: |
-          $pin = $env:CLOUDPC_PIN
-          $cloudPCName = $env:CLOUDPC_NAME
-          $supremoPath = "$env:TEMP\Supremo.exe"
+          Start-Process -FilePath "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" -ArgumentList "up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:COMPUTERNAME" -Wait
+          Write-Output "Tailscale node authenticated"
 
-          Write-Output "Starting Cloud PC '$cloudPCName'..."
-          Start-Process -FilePath $supremoPath -ArgumentList "/PIN $pin /NAME $cloudPCName /RUN" -WindowStyle Hidden
-          Start-Sleep -Seconds 5
-
-          Write-Output "💻 Cloud PC '$cloudPCName' is running!"
-          Write-Output "🔑 PIN: $pin"
-          Write-Output "Connect using Supremo app on Android or PC."
+      - name: 🖥️ Cloud PC: Enable RDP
+        shell: pwsh
+        run: |
+          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Write-Output "Remote Desktop enabled"
 
       - name: ⏳ Cloud PC: Ready to Use!
         shell: pwsh
-        env:
-          CLOUDPC_PIN: ${{ github.event.inputs.pin }}
-          CLOUDPC_NAME: ${{ github.event.inputs.name }}
         run: |
-          $pin = $env:CLOUDPC_PIN
-          $cloudPCName = $env:CLOUDPC_NAME
-          $durationHours = 5
-          $durationSeconds = $durationHours * 3600
-          $startTime = Get-Date
+          $username = "CloudPCUSER"
+          $password = "WindowsCloudPC#2025"
+          $pcName = "${{ github.event.inputs.pc_name }}"
 
-          while ((Get-Date) - $startTime -lt (New-TimeSpan -Seconds $durationSeconds)) {
-              $elapsed = (Get-Date) - $startTime
-              $remaining = New-TimeSpan -Seconds ($durationSeconds - $elapsed.TotalSeconds)
-              $minutes = [math]::Floor($remaining.TotalMinutes)
-              $seconds = $remaining.Seconds
+          $tailscaleIP = & "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" ip -4 | ForEach-Object { $_.Trim() }
+          $tailscaleNodeName = & "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" status | Select-String "hostname:" | ForEach-Object { ($_ -split ":")[1].Trim() }
 
-              Write-Output "🎉 Enjoy your Cloud PC '$cloudPCName'! 💻"
-              Write-Output "🔑 PIN: $pin"
-              Write-Output "⏱️ Time remaining: $minutes minutes, $seconds seconds"
-              Start-Sleep -Seconds 5
-          }
-
-          Write-Output "⏰ 5 hours reached. Cloud PC job completed. ✅"
+          Write-Output "🎉 Your personal Cloud PC '$pcName' is ready!"
+          Write-Output "🔑 Login user: $username"
+          Write-Output "💻 Password: $password"
+          Write-Output "🌐 Tailscale IP: $tailscaleIP"
+          Write-Output "📛 Tailscale Node Name: $tailscaleNodeName"
+          Write-Output "Connect via RDP to this Cloud PC using the above credentials."
