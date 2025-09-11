@@ -44,7 +44,15 @@ jobs:
       - name: 🔑 Authenticate Tailscale
         shell: powershell
         run: |
-          Start-Process "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" -ArgumentList "up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:COMPUTERNAME" -Wait
+          $paths = @(
+              "C:\Program Files (x86)\Tailscale IPN\tailscale.exe",
+              "C:\Program Files\Tailscale IPN\tailscale.exe"
+          )
+          $tailscaleExe = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $tailscaleExe) { Write-Error "Tailscale executable not found!"; exit 1 }
+
+          Start-Process $tailscaleExe -ArgumentList "up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:COMPUTERNAME" -Wait
+          Write-Output "Tailscale node authenticated"
 
       - name: 🖥️ Enable RDP
         shell: powershell
@@ -52,7 +60,7 @@ jobs:
           Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-      - name: ⏳ Keep Alive
+      - name: ⏳ Keep Alive Loop
         shell: powershell
         run: |
           $scriptPath = "$env:TEMP\cloudpc_keepalive.ps1"
@@ -60,8 +68,10 @@ jobs:
             '$username = "CloudPCUSER"',
             '$password = "WindowsCloudPC#2025"',
             '$pcName = "' + $env:PC_NAME + '"',
-            '$tailscaleIP = (& "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" ip -4).Trim()',
-            '$tailscaleNodeName = (& "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" status | Select-String "hostname:").ToString().Split(":")[1].Trim()',
+            '$paths = @("C:\Program Files (x86)\Tailscale IPN\tailscale.exe","C:\Program Files\Tailscale IPN\tailscale.exe")',
+            '$tailscaleExe = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1',
+            '$tailscaleIP = (& $tailscaleExe ip -4).Trim()',
+            '$tailscaleNodeName = (& $tailscaleExe status | Select-String "hostname:").ToString().Split(":")[1].Trim()',
             '$endTime = (Get-Date).AddHours(5)',
             'while ((Get-Date) -lt $endTime) {',
             '    Write-Output "🎉 Your personal Cloud PC $pcName is ready!"',
