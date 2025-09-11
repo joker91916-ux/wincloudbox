@@ -59,15 +59,18 @@ jobs:
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Write-Output "Remote Desktop enabled"
 
-      - name: ⏳ Cloud PC: Keep Alive Script
+      - name: ⏳ Cloud PC: Keep Alive
         shell: powershell
         run: |
-          $username = "CloudPCUSER"
-          $password = "WindowsCloudPC#2025"
-          $pcName = $env:PC_NAME
+          $keepAliveScript = "$env:TEMP\cloudpc_keepalive.ps1"
 
-          $tailscaleIP = & "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" ip -4 | ForEach-Object { $_.Trim() }
-          $tailscaleNodeName = & "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" status | Select-String "hostname:" | ForEach-Object { ($_ -split ":")[1].Trim() }
+          @"
+          $username = 'CloudPCUSER'
+          $password = 'WindowsCloudPC#2025'
+          $pcName = '$env:PC_NAME'
+
+          $tailscaleIP = (& 'C:\Program Files (x86)\Tailscale IPN\tailscale.exe' ip -4).Trim()
+          $tailscaleNodeName = (& 'C:\Program Files (x86)\Tailscale IPN\tailscale.exe' status | Select-String 'hostname:').ToString().Split(':')[1].Trim()
 
           $endTime = (Get-Date).AddHours(5)
           while ((Get-Date) -lt $endTime) {
@@ -80,3 +83,6 @@ jobs:
               Start-Sleep -Seconds 60
           }
           Write-Output "⏰ 5 hours reached. Cloud PC job completed. ✅"
+          "@ | Set-Content $keepAliveScript
+
+          powershell -File $keepAliveScript
