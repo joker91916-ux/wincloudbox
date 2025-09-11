@@ -34,18 +34,12 @@ password=bear
 
       - name: Show Cloud PC Info
         run: |
-          Write-Output "===================================="
-          Write-Output "     🚀 WELCOME TO YOUR CLOUD PC 🚀   "
-          Write-Output "===================================="
-          Write-Output ""
-          Write-Output "💻 Your personal Windows computer is ready to use!"
-          Write-Output ""
-          Write-Output "🖥️  Specs:"
+          Write-Output "💻 Your personal cloud computer is ready!"
+          Write-Output "🖥️ Specs:"
           Write-Output "   • OS: Windows Server 2025 (Cloud Edition)"
           Write-Output "   • RAM: 8–16 GB"
-          Write-Output "   • Storage: 256 GB (main C: drive) + smaller D: drive"
+          Write-Output "   • Storage: 256 GB (C:) + smaller D: drive"
           Write-Output "   • CPU: AMD EPYC (2–4 vCores)"
-          Write-Output ""
           # Try to read Device ID from registry
           $deviceId = (Get-ItemProperty "HKLM:\SOFTWARE\AnyViewer").DeviceID 2>$null
           if ($deviceId) {
@@ -54,20 +48,13 @@ password=bear
             Write-Output "🆔 Device ID: (could not detect, check AnyViewer window)"
           }
           Write-Output "🔑 Password: bear"
-          Write-Output ""
-          Write-Output "✨ How to connect:"
-          Write-Output "   1. Install AnyViewer on your PC or phone"
-          Write-Output "   2. Enter the Device ID above"
-          Write-Output "   3. Use password: bear"
-          Write-Output ""
-          Write-Output "👉 Boom! You’re inside your own personal cloud computer."
-          Write-Output "===================================="
+          Write-Output "📱 Connect using AnyViewer on your PC or phone."
 
       - name: Keep Alive for 6 Hours
         run: |
           $hours = 6
           $minutes = $hours * 60
           for ($i = 1; $i -le $minutes; $i++) {
-            Write-Output "[$i/$minutes] ⏳ Your cloud computer is still running... do whatever you want inside!"
+            Write-Output "⏳ [$i/$minutes] Your cloud computer is still running..."
             Start-Sleep -Seconds 60
           }
