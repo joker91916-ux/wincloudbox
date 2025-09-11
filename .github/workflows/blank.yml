@@ -1,52 +1,46 @@
-name: Windows-2025 Cloud Computer (Chrome Remote Desktop)
+name: Windows-2025 Cloud Computer (Supremo)
 
 on:
   workflow_dispatch:
     inputs:
-      crd_code:
-        description: 'Chrome Remote Desktop headless setup code (from Google account)'
-        required: true
       pin:
-        description: '6+ digit PIN for your cloud computer'
+        description: 'PIN for your Supremo cloud PC (4-6 digits)'
         required: true
       name:
-        description: 'Friendly name for your cloud computer'
+        description: 'Friendly name for your cloud PC'
         required: true
 
 jobs:
-  setup-cloud-pc:
+  setup-supremo:
     runs-on: windows-2025
     steps:
-      - name: Download CRD Host
+      - name: Download Supremo
         shell: pwsh
         run: |
-          $url = "https://dl.google.com/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi"
-          $output = "$env:TEMP\CRDHost.msi"
-          Write-Output "Downloading Chrome Remote Desktop Host..."
+          $url = "https://www.nanosystems.it/public/download/Supremo.exe"
+          $output = "$env:TEMP\Supremo.exe"
+          Write-Output "Downloading Supremo..."
           Invoke-WebRequest -Uri $url -OutFile $output
-          Write-Output "Downloaded to $output"
+          Write-Output "Downloaded Supremo to $output"
 
-      - name: Install CRD Host
+      - name: Start Supremo
         shell: pwsh
         run: |
-          $installer = "$env:TEMP\CRDHost.msi"
-          Write-Output "Installing CRD Host..."
-          Start-Process msiexec.exe -ArgumentList "/i `"$installer`" /quiet /norestart" -Wait
-          Write-Output "Installation complete."
+          $supremoPath = "$env:TEMP\Supremo.exe"
+          $pin = "${{ github.event.inputs.pin }}"
+          $cloudPCName = "${{ github.event.inputs.name }}"
+
+          Write-Output "Starting Supremo..."
+          Start-Process -FilePath $supremoPath -ArgumentList "/PIN $pin /NAME $cloudPCName /RUN" -WindowStyle Hidden
+
+          # Wait a few seconds for Supremo to initialize
           Start-Sleep -Seconds 5
 
-      - name: Start CRD Host via CMD
-        shell: cmd
-        run: |
-          "C:\Program Files (x86)\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe" ^
-            --code "%CRD_CODE%" ^
-            --redirect-url "https://remotedesktop.google.com/_/oauthredirect" ^
-            --pin "%CRD_PIN%" ^
-            --display-name "%CRD_NAME%"
-        env:
-          CRD_CODE: ${{ github.event.inputs.crd_code }}
-          CRD_PIN: ${{ github.event.inputs.pin }}
-          CRD_NAME: ${{ github.event.inputs.name }}
+          # Try to get the Supremo ID from running process registry (if available)
+          # Supremo ID is usually generated dynamically; for simplicity, we just print that it's running
+          Write-Output "💻 Your Supremo cloud PC '$cloudPCName' is running!"
+          Write-Output "🔑 PIN: $pin"
+          Write-Output "You can connect using Supremo with the displayed PIN."
 
       - name: Spam Message & Keep Alive for 5 Hours
         shell: pwsh
@@ -54,20 +48,4 @@ jobs:
           $durationHours = 5
           $durationSeconds = $durationHours * 3600
           $startTime = Get-Date
-          $cloudPCName = "${{ github.event.inputs.name }}"
-          $pin = "${{ github.event.inputs.pin }}"
-          $ram = "8–16 GB"
-          $storage = "256 GB (C:) + smaller D: drive"
-          $cpu = "AMD EPYC (2–4 vCores)"
-
-          while ((Get-Date) - $startTime -lt (New-TimeSpan -Seconds $durationSeconds)) {
-              Write-Output "🎉 Enjoy using your computer! 💻 '$cloudPCName'"
-              Write-Output "🖥️ Specs: RAM: $ram | Storage: $storage | CPU: $cpu"
-              Write-Output "🔑 PIN: $pin"
-              Write-Output "This computer runs for 6 hours. ⏰"
-              Write-Output "To get a new cloud computer, simply relaunch this workflow. 🚀"
-              Write-Output "Your new computer will appear on your Chrome Remote Desktop page. 🌐"
-              Start-Sleep -Seconds 5
-          }
-
-          Write-Output "⏰ 5 hours reached. Job completed. ✅"
+          $cloudPCName = "${{ github
