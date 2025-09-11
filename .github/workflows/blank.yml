@@ -34,29 +34,31 @@ jobs:
               Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
           }
 
-      - name: 🌐 Install Tailscale
+      - name: 🌐 Install & Authenticate Tailscale
         shell: powershell
         run: |
+          # Download installer
           $installer = "$env:TEMP\tailscale-setup.exe"
           Invoke-WebRequest "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile $installer
-          Start-Process msiexec.exe -ArgumentList "/i `"$installer`" /quiet /norestart" -Wait
-          Write-Output "Tailscale installed"
 
-      - name: 🔑 Authenticate Tailscale
-        shell: powershell
-        run: |
+          # Install Tailscale and wait
+          Start-Process msiexec.exe -ArgumentList "/i `"$installer`" /quiet /norestart" -Wait
+
+          # Wait up to 2 minutes for Tailscale executable
           $paths = @(
               "C:\Program Files (x86)\Tailscale IPN\tailscale.exe",
               "C:\Program Files\Tailscale IPN\tailscale.exe"
           )
           $tailscaleExe = $null
-          $timeout = (Get-Date).AddSeconds(30)
+          $timeout = (Get-Date).AddMinutes(2)
           while (-not $tailscaleExe -and (Get-Date) -lt $timeout) {
               $tailscaleExe = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1
-              if (-not $tailscaleExe) { Start-Sleep -Seconds 2 }
+              if (-not $tailscaleExe) { Start-Sleep -Seconds 5 }
           }
-          if (-not $tailscaleExe) { Write-Error "Tailscale executable not found after 30 seconds!"; exit 1 }
 
+          if (-not $tailscaleExe) { Write-Error "Tailscale executable not found after 2 minutes!"; exit 1 }
+
+          # Authenticate Tailscale
           Start-Process $tailscaleExe -ArgumentList "up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:COMPUTERNAME" -Wait
           Write-Output "Tailscale node authenticated"
 
