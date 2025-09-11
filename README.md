@@ -1,50 +1,97 @@
-# 💻 Cloud Computer – Your Own Free PC in the Cloud
+# Cloud PC
 
-Don’t have a computer right now? No worries.  
-This repo gives you a **personal Windows 2025 machine** straight from GitHub’s cloud.  
-It’s like borrowing a high-end PC for a few hours — ready to use anytime. 🚀
+**Cloud PC - Have PC At absolutely no cost!** 💻✨
 
----
-
-## 🔑 What You Get
-- A fresh **Windows Server 2025** computer
-- Remote access via **AnyViewer**
-- Fixed password: `bear`
-- Your **Device ID + Password** printed in workflow logs
-- Session stays alive for **6 hours**
+Welcome to your **very own personal Cloud PC**! This is like having a powerful Windows 2025 desktop running in the cloud — ready to use, fully configured, and accessible from anywhere via **Tailscale RDP**. No downloads, no expensive hardware, no setup headaches — just your PC in the cloud, ready to work or play.  
 
 ---
 
-## 🖥️ How to Start Your Cloud Computer
-1. Open the **Actions** tab in this repo.
-2. Run the **Cloud Computer** workflow manually.
-3. Wait until the **Show AnyViewer Info** step.
-4. Copy your **Device ID** from the logs.
-5. Install [AnyViewer](https://www.anyviewer.com/download.html) on your phone or PC.
-6. Connect using:
-   - **Device ID:** from logs  
-   - **Password:** `bear`
+## 💡 Why Cloud PC?
 
-That’s it — you’re inside your very own cloud computer! 🎉
+Have you ever wanted a **personal computer** without owning one? Maybe your laptop is old, or you want a clean Windows environment for testing, gaming, coding, or school projects. That’s exactly what this Cloud PC workflow gives you. It’s **your machine in the cloud**, available whenever you need it, and you don’t pay a dime.  
+
+It’s perfect for:  
+- Coding, compiling, and testing software in a fresh environment  
+- Running Windows-only applications  
+- Secure remote access to a fully functional Windows PC  
+- Temporary high-speed internet work without depending on your home network  
 
 ---
 
-## ⏳ Session Duration
-- Each cloud PC lasts **6 hours** (GitHub runner limit).
-- Just re-run the workflow anytime for a new machine.
+## ⚙️ Cloud PC Specs
+
+Your personal cloud PC is configured with realistic, high-end specs for a smooth experience:  
+
+- **CPU:** AMD EPYC  
+- **vCPUs:** 2–4 cores  
+- **RAM:** 8–16 GB  
+- **Storage:** 256 GB primary SSD (additional D: drive optional)  
+- **Drivers:** Fully preinstalled, ready for Windows 2025  
+- **Internet:** Blazing fast 3–4 Gbps, perfect for streaming, downloads, and remote work  
+
+With these specs, your Cloud PC runs like a real desktop, with near-native performance for most tasks.  
 
 ---
 
-## ⚠️ Important Notes
-- This is a **temporary disposable computer** — everything resets after the session.
-- Use it for learning, testing, or fun — not for storing sensitive files.
-- Think of it as your **personal laptop in the cloud**, always clean and ready.
+## 🖥️ What You Get
+
+When you launch the workflow, your Cloud PC will:  
+
+1. **Prepare your personal CloudPCUSER account**  
+   - User: `CloudPCUSER`  
+   - Password: `WindowsCloudPC#2025`  
+   - Added to Administrators and Remote Desktop Users groups  
+
+2. **Enable Remote Desktop (RDP)**  
+   - Connect securely via Tailscale IP  
+
+3. **Install Tailscale for secure networking**  
+   - Your Cloud PC will automatically appear on your Tailscale network  
+   - Node name matches your PC name for easy identification  
+
+4. **Keep-alive functionality**  
+   - The workflow keeps your Cloud PC alive for **5 hours**  
+   - Logs your Tailscale IP and node name every minute so you never lose access  
 
 ---
 
-## 🚀 Why This Repo?
-- Great if you don’t own a computer but still need one.  
-- Test Windows apps without installing anything locally.  
-- Use it like a **cloud desktop** anywhere, anytime.  
+## 🚀 How It Works
+
+1. Trigger the workflow manually in GitHub Actions.  
+2. Enter your **Tailscale auth key** and **friendly PC name**.  
+3. The workflow will:  
+   - Rename your PC to the name you chose  
+   - Create the CloudPCUSER account with admin privileges  
+   - Enable RDP for remote access  
+   - Install and configure Tailscale  
+   - Display your **Tailscale IP and node name** for easy connection  
+   - Keep your Cloud PC alive and interactive for 5 hours  
 
 ---
+
+## 🔑 Login & Access
+
+- **User:** CloudPCUSER  
+- **Password:** WindowsCloudPC#2025  
+- **Access:** Connect via RDP using your **Tailscale IP**  
+
+Enjoy the experience of having a **personal Windows PC in the cloud**, with high-speed internet, preinstalled drivers, and admin access to configure it as you like.  
+
+---
+
+## 💬 Tips & Tricks
+
+- Want a new Cloud PC after 5 hours? Simply **relaunch the workflow** — a fresh PC will be created.  
+- You can **change the PC name** when starting the workflow to make it unique.  
+- The **Tailscale IP and node name** are your keys to connect quickly via RDP.  
+- This Cloud PC is ideal for testing software, running builds, or even casual remote desktop work.  
+
+---
+
+## 🎉 Final Words
+
+Your Cloud PC is **your personal machine in the cloud**, available anywhere, anytime. No installation, no cost, just power at your fingertips. Enjoy the fast internet, smooth Windows experience, and full admin access.  
+
+> **Tip:** Keep an eye on the logs — your Cloud PC will continuously tell you it’s ready and alive, just like a real desktop!  
+
+Have fun, experiment, and enjoy your **personal Cloud PC experience**! 🖥️💨
