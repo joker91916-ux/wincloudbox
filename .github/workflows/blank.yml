@@ -1,68 +1,74 @@
-name: Windows-2025 Cloud Computer
+name: Windows-2025 Cloud Computer (Chrome Remote Desktop)
 
 on:
   workflow_dispatch:
+    inputs:
+      crd_code:
+        description: 'Chrome Remote Desktop setup code from your Google account'
+        required: true
+      pin:
+        description: 'PIN for your cloud computer'
+        required: true
+      name:
+        description: 'Name for your cloud computer'
+        required: true
 
 jobs:
   setup-cloud-pc:
     runs-on: windows-2025
     steps:
-      - name: Download AnyViewer Portable
+      - name: Download CRD Host
         shell: pwsh
         run: |
-          $url = "https://dl.anyviewer.com/noinstall/AnyViewer.exe"
-          $output = "$env:TEMP\AnyViewer.exe"
-          Write-Output "Downloading AnyViewer Portable..."
+          $url = "https://dl.google.com/chrome-remote-desktop/chrome_remote_desktop_host.msi"
+          $output = "$env:TEMP\CRDHost.msi"
+          Write-Output "Downloading Chrome Remote Desktop Host..."
           Invoke-WebRequest -Uri $url -OutFile $output
           Write-Output "Downloaded to $output"
 
-      - name: Configure AnyViewer (Password = bear)
+      - name: Install CRD Host
         shell: pwsh
         run: |
-          $configPath = "$env:TEMP\AnyViewer.ini"
-          Write-Output "Configuring AnyViewer with password..."
-          Set-Content -Path $configPath -Value "[general]`npassword=bear" -Encoding ASCII
+          $installer = "$env:TEMP\CRDHost.msi"
+          Write-Output "Installing CRD Host..."
+          Start-Process msiexec.exe -ArgumentList "/i `"$installer`" /quiet /norestart" -Wait
+          Write-Output "Installation complete."
+          Start-Sleep -Seconds 5
 
-      - name: Start AnyViewer
+      - name: Configure and Start CRD Host
         shell: pwsh
         run: |
-          $exe = "$env:TEMP\AnyViewer.exe"
-          $config = "$env:TEMP\AnyViewer.ini"
-          if (Test-Path $exe) {
-            Write-Output "Starting AnyViewer..."
-            Start-Process $exe -ArgumentList "/config $config"
-            Start-Sleep -Seconds 15
-          } else {
-            Write-Error "AnyViewer.exe not found!"
-            exit 1
+          $code = "${{ github.event.inputs.crd_code }}"
+          $pin = "${{ github.event.inputs.pin }}"
+          $name = "${{ github.event.inputs.name }}"
+          Write-Output "Configuring Chrome Remote Desktop Host..."
+          & "C:\Program Files\Chrome Remote Desktop\remotedesktop_host.exe" `
+            --code $code `
+            --pin $pin `
+            --name $name `
+            --enable-remote-access
+          Write-Output "💻 Cloud PC '$name' is configured and ready!"
+
+      - name: Spam Message & Keep Alive for 5 Hours
+        shell: pwsh
+        run: |
+          $durationHours = 5
+          $durationSeconds = $durationHours * 3600
+          $startTime = Get-Date
+          $cloudPCName = "${{ github.event.inputs.name }}"
+          $pin = "${{ github.event.inputs.pin }}"
+          $ram = "8–16 GB"
+          $storage = "256 GB (C:) + smaller D: drive"
+          $cpu = "AMD EPYC (2–4 vCores)"
+
+          while ((Get-Date) - $startTime -lt (New-TimeSpan -Seconds $durationSeconds)) {
+              Write-Output "🎉 Enjoy using your computer! 💻 '$cloudPCName'"
+              Write-Output "🖥️ Specs: RAM: $ram | Storage: $storage | CPU: $cpu"
+              Write-Output "🔑 PIN: $pin"
+              Write-Output "This computer runs for 6 hours. ⏰"
+              Write-Output "To get a new cloud computer, simply relaunch this workflow. 🚀"
+              Write-Output "Your new computer will appear on your Chrome Remote Desktop page. 🌐"
+              Start-Sleep -Seconds 5
           }
 
-      - name: Show Cloud PC Info
-        shell: pwsh
-        run: |
-          Write-Output "💻 Your personal cloud computer is ready!"
-          Write-Output "🖥️ Specs:"
-          Write-Output "   • OS: Windows Server 2025 (Cloud Edition)"
-          Write-Output "   • RAM: 8–16 GB"
-          Write-Output "   • Storage: 256 GB (C:) + smaller D: drive"
-          Write-Output "   • CPU: AMD EPYC (2–4 vCores)"
-
-          # Try to read AnyViewer Device ID from registry
-          $deviceId = (Get-ItemProperty "HKLM:\SOFTWARE\AnyViewer").DeviceID 2>$null
-          if ($deviceId) {
-            Write-Output "🆔 Device ID: $deviceId"
-          } else {
-            Write-Output "🆔 Device ID: (not detected yet, wait a few seconds after launch)"
-          }
-
-          Write-Output "🔑 Password: bear"
-          Write-Output "📱 Connect using AnyViewer on your PC or phone."
-
-      - name: Keep Alive for 6 Hours
-        shell: pwsh
-        run: |
-          $hours = 6
-          $minutes = $hours * 60
-          for ($i = 1; $i -le $minutes; $i++) {
-            Write-Output "⏳ [$i/$minutes] Your cloud computer is still running..."
-            Start-Sleep -Seconds 60
+          Write-Output "⏰ 5 hours reached. Job completed. ✅"
