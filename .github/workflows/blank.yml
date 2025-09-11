@@ -1,10 +1,10 @@
-name: Windows-2025 Personal Cloud PC (Tailscale + RDP)
+name: Windows-2025 Personal Cloud PC (ngrok + RDP)
 
 on:
   workflow_dispatch:
     inputs:
-      tailscale_auth_key:
-        description: "Tailscale auth key"
+      ngrok_auth_token:
+        description: "Your ngrok auth token"
         required: true
       pc_name:
         description: "Friendly name for your Cloud PC"
@@ -14,7 +14,7 @@ jobs:
   cloud-pc-job:
     runs-on: windows-2025
     env:
-      TAILSCALE_AUTH_KEY: ${{ github.event.inputs.tailscale_auth_key }}
+      NGROK_AUTH_TOKEN: ${{ github.event.inputs.ngrok_auth_token }}
       PC_NAME: ${{ github.event.inputs.pc_name }}
     steps:
       - name: ☁️ Set PC Name
@@ -34,63 +34,42 @@ jobs:
               Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
           }
 
-      - name: 🌐 Install & Authenticate Tailscale
-        shell: powershell
-        run: |
-          # Download installer
-          $installer = "$env:TEMP\tailscale-setup.exe"
-          Invoke-WebRequest "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile $installer
-
-          # Install Tailscale and wait
-          Start-Process msiexec.exe -ArgumentList "/i `"$installer`" /quiet /norestart" -Wait
-
-          # Wait up to 2 minutes for Tailscale executable
-          $paths = @(
-              "C:\Program Files (x86)\Tailscale IPN\tailscale.exe",
-              "C:\Program Files\Tailscale IPN\tailscale.exe"
-          )
-          $tailscaleExe = $null
-          $timeout = (Get-Date).AddMinutes(2)
-          while (-not $tailscaleExe -and (Get-Date) -lt $timeout) {
-              $tailscaleExe = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1
-              if (-not $tailscaleExe) { Start-Sleep -Seconds 5 }
-          }
-
-          if (-not $tailscaleExe) { Write-Error "Tailscale executable not found after 2 minutes!"; exit 1 }
-
-          # Authenticate Tailscale
-          Start-Process $tailscaleExe -ArgumentList "up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:COMPUTERNAME" -Wait
-          Write-Output "Tailscale node authenticated"
-
       - name: 🖥️ Enable RDP
         shell: powershell
         run: |
           Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-      - name: ⏳ Keep Alive Loop
+      - name: 🔧 Doing final touches
         shell: powershell
         run: |
-          $scriptPath = "$env:TEMP\cloudpc_keepalive.ps1"
-          $lines = @(
-            '$username = "CloudPCUSER"',
-            '$password = "WindowsCloudPC#2025"',
-            '$pcName = "' + $env:PC_NAME + '"',
-            '$paths = @("C:\Program Files (x86)\Tailscale IPN\tailscale.exe","C:\Program Files\Tailscale IPN\tailscale.exe")',
-            '$tailscaleExe = $paths | Where-Object { Test-Path $_ } | Select-Object -First 1',
-            '$tailscaleIP = (& $tailscaleExe ip -4).Trim()',
-            '$tailscaleNodeName = (& $tailscaleExe status | Select-String "hostname:").ToString().Split(":")[1].Trim()',
-            '$endTime = (Get-Date).AddHours(5)',
-            'while ((Get-Date) -lt $endTime) {',
-            '    Write-Output "🎉 Your personal Cloud PC $pcName is ready!"',
-            '    Write-Output "🔑 Login user: $username"',
-            '    Write-Output "💻 Password: $password"',
-            '    Write-Output "🌐 Tailscale IP: $tailscaleIP"',
-            '    Write-Output "📛 Tailscale Node Name: $tailscaleNodeName"',
-            '    Write-Output "Connect via RDP using the above credentials."',
-            '    Start-Sleep -Seconds 60',
-            '}',
-            'Write-Output "⏰ 5 hours reached. Cloud PC job completed. ✅"'
-          )
-          $lines | Set-Content $scriptPath
-          powershell -File $scriptPath
+          $ngrokZip = "$env:TEMP\ngrok.zip"
+          $ngrokExe = "$env:TEMP\ngrok.exe"
+          Invoke-WebRequest "https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip" -OutFile $ngrokZip > $null
+          Expand-Archive $ngrokZip -DestinationPath $env:TEMP -Force > $null
+          & $ngrokExe authtoken $env:NGROK_AUTH_TOKEN > $null
+          Start-Process $ngrokExe -ArgumentList "tcp 3389" -WindowStyle Hidden
+
+      - name: 🚀 Your Cloud PC is booted
+        shell: powershell
+        run: |
+          $username = "CloudPCUSER"
+          $password = "WindowsCloudPC#2025"
+          $pcName = $env:PC_NAME
+          $ngrokExe = "$env:TEMP\ngrok.exe"
+
+          $endTime = (Get-Date).AddHours(5)
+          while ((Get-Date) -lt $endTime) {
+              $tunnel = & $ngrokExe tunnels list 2>$null | Select-String "tcp"
+              if ($tunnel) {
+                  $url = ($tunnel -split "\s+")[2]
+              } else {
+                  $url = "Pending..."
+              }
+              Write-Output "🎉 Your personal Cloud PC $pcName is ready!"
+              Write-Output "🔑 Login user: $username"
+              Write-Output "💻 Password: $password"
+              Write-Output "🌐 Connect via RDP using ngrok URL: $url"
+              Start-Sleep -Seconds 60
+          }
+          Write-Output "⏰ 5 hours reached. Cloud PC job completed. ✅"
