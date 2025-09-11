@@ -50,8 +50,9 @@ jobs:
           # Start Tailscale service
           Start-Service Tailscale
 
-          # Authenticate Tailscale
-          & "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:PC_NAME --accept-routes
+          # Authenticate Tailscale using default path
+          $tailscaleExe = "C:\Program Files\Tailscale\tailscale.exe"
+          & $tailscaleExe up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:PC_NAME --accept-routes
 
       - name: 🚀 Finalizing Cloud PC
         shell: powershell
@@ -59,7 +60,7 @@ jobs:
           $username = "CloudPCUSER"
           $password = "WindowsCloudPC#2025"
           $pcName = $env:PC_NAME
-          $tailscaleExe = "C:\Program Files (x86)\Tailscale IPN\tailscale.exe"
+          $tailscaleExe = "C:\Program Files\Tailscale\tailscale.exe"
 
           Start-Sleep -Seconds 10
           $endTime = (Get-Date).AddHours(5)
