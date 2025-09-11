@@ -10,8 +10,8 @@ jobs:
       - name: Download Supremo Portable
         shell: pwsh
         run: |
-          $url = "https://www.supremocontrol.com/download/supremo/windows/"
-          $output = "$env:TEMP\supremo.exe"
+          $url = "https://www.nanosystems.it/public/download/Supremo.exe"
+          $output = "$env:TEMP\Supremo.exe"
           Write-Output "Downloading Supremo Portable..."
           Invoke-WebRequest -Uri $url -OutFile $output
           Write-Output "Downloaded to $output"
@@ -19,15 +19,15 @@ jobs:
       - name: Configure Supremo (Password = bear)
         shell: pwsh
         run: |
-          $configPath = "$env:TEMP\supremo.ini"
+          $configPath = "$env:TEMP\Supremo.ini"
           Write-Output "Configuring Supremo with password..."
           Set-Content -Path $configPath -Value "[general]`npassword=bear" -Encoding ASCII
 
       - name: Start Supremo
         shell: pwsh
         run: |
-          $exe = "$env:TEMP\supremo.exe"
-          $config = "$env:TEMP\supremo.ini"
+          $exe = "$env:TEMP\Supremo.exe"
+          $config = "$env:TEMP\Supremo.ini"
           if (Test-Path $exe) {
             Write-Output "Starting Supremo from $exe"
             Start-Process $exe -ArgumentList "/config $config"
