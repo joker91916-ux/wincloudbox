@@ -25,12 +25,9 @@ jobs:
 
       - name: ⚡ Cloud PC: Start & Configure
         shell: pwsh
-        env:
-          CLOUDPC_PIN: ${{ github.event.inputs.pin }}
-          CLOUDPC_NAME: ${{ github.event.inputs.name }}
         run: |
-          $pin = $env:CLOUDPC_PIN
-          $cloudPCName = $env:CLOUDPC_NAME
+          $pin = '${{ github.event.inputs.pin }}'
+          $cloudPCName = '${{ github.event.inputs.name }}'
           $supremoPath = "$env:TEMP\Supremo.exe"
 
           Write-Output "Starting your Cloud PC '$cloudPCName'..."
@@ -69,24 +66,26 @@ jobs:
 
       - name: ⏳ Cloud PC: Ready to Use!
         shell: pwsh
-        env:
-          CLOUDPC_NAME: ${{ github.event.inputs.name }}
-          CLOUDPC_PIN: ${{ github.event.inputs.pin }}
         run: |
+          $pin = '${{ github.event.inputs.pin }}'
+          $cloudPCName = '${{ github.event.inputs.name }}'
           $durationHours = 5
           $durationSeconds = $durationHours * 3600
           $startTime = Get-Date
-          $cloudPCName = $env:CLOUDPC_NAME
-          $pin = $env:CLOUDPC_PIN
           $ram = "8–16 GB"
           $storage = "256 GB (C:) + smaller D: drive"
           $cpu = "AMD EPYC (2–4 vCores)"
 
           while ((Get-Date) - $startTime -lt (New-TimeSpan -Seconds $durationSeconds)) {
-              Write-Output "🎉 Enjoy using your Cloud PC! 💻 '$cloudPCName'"
+              $elapsed = (Get-Date) - $startTime
+              $remaining = New-TimeSpan -Seconds ($durationSeconds - $elapsed.TotalSeconds)
+              $minutes = [math]::Floor($remaining.TotalMinutes)
+              $seconds = $remaining.Seconds
+
+              Write-Output "🎉 Enjoy your Cloud PC! 💻 '$cloudPCName'"
               Write-Output "🖥️ Specs: RAM: $ram | Storage: $storage | CPU: $cpu"
               Write-Output "🔑 Supremo PIN: $pin"
-              Write-Output "This Cloud PC runs for 6 hours. ⏰"
+              Write-Output "⏱️ Time remaining: $minutes minutes, $seconds seconds"
               Write-Output "To get a new Cloud PC, simply relaunch this workflow. 🚀"
               Start-Sleep -Seconds 5
           }
