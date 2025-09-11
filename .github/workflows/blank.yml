@@ -17,13 +17,13 @@ jobs:
       NGROK_AUTH_TOKEN: ${{ github.event.inputs.ngrok_auth_token }}
       PC_NAME: ${{ github.event.inputs.pc_name }}
     steps:
-      - name: ☁️ Set PC Name
+      - name: Set PC Name
         shell: powershell
         run: |
           Rename-Computer -NewName $env:PC_NAME -Force -Restart:$false
           Write-Output "PC name set to $env:PC_NAME"
 
-      - name: ⚡ Create CloudPCUSER
+      - name: Create CloudPCUSER
         shell: powershell
         run: |
           $username = "CloudPCUSER"
@@ -34,13 +34,13 @@ jobs:
               Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
           }
 
-      - name: 🖥️ Enable RDP
+      - name: Enable RDP
         shell: powershell
         run: |
           Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-      - name: 🔧 Doing final touches
+      - name: Doing final touches
         shell: powershell
         run: |
           $ngrokZip = "$env:TEMP\ngrok.zip"
@@ -50,7 +50,7 @@ jobs:
           & $ngrokExe authtoken $env:NGROK_AUTH_TOKEN > $null
           Start-Process $ngrokExe -ArgumentList "tcp 3389" -WindowStyle Hidden
 
-      - name: 🚀 Your Cloud PC is booted
+      - name: Your Cloud PC is booted
         shell: powershell
         run: |
           $username = "CloudPCUSER"
@@ -66,10 +66,10 @@ jobs:
               } else {
                   $url = "Pending..."
               }
-              Write-Output "🎉 Your personal Cloud PC $pcName is ready!"
-              Write-Output "🔑 Login user: $username"
-              Write-Output "💻 Password: $password"
-              Write-Output "🌐 Connect via RDP using ngrok URL: $url"
+              Write-Output "Your personal Cloud PC $pcName is ready!"
+              Write-Output "Login user: $username"
+              Write-Output "Password: $password"
+              Write-Output "Connect via RDP using ngrok URL: $url"
               Start-Sleep -Seconds 60
           }
-          Write-Output "⏰ 5 hours reached. Cloud PC job completed. ✅"
+          Write-Output "5 hours reached. Cloud PC job completed."
