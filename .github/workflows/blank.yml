@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       crd_code:
-        description: 'Chrome Remote Desktop setup code from your Google account'
+        description: 'Chrome Remote Desktop headless setup code (from Google account)'
         required: true
       pin:
-        description: 'PIN for your cloud computer'
+        description: '6+ digit PIN for your cloud computer'
         required: true
       name:
-        description: 'Name for your cloud computer'
+        description: 'Friendly name for your cloud computer'
         required: true
 
 jobs:
@@ -40,10 +40,9 @@ jobs:
         run: |
           "C:\Program Files (x86)\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe" ^
             --code "%CRD_CODE%" ^
+            --redirect-url "https://remotedesktop.google.com/_/oauthredirect" ^
             --pin "%CRD_PIN%" ^
-            --name "%CRD_NAME%" ^
-            --redirect-url "https://remotedesktop.google.com/_/oauthredirect"
-
+            --display-name "%CRD_NAME%"
         env:
           CRD_CODE: ${{ github.event.inputs.crd_code }}
           CRD_PIN: ${{ github.event.inputs.pin }}
