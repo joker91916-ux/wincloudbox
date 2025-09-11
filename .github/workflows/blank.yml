@@ -17,15 +17,14 @@ jobs:
           Start-Sleep -s 10
 
       - name: Configure AnyViewer (Password = bear)
+        shell: pwsh
         run: |
           $configPath = "$env:ProgramData\AnyViewer\anyviewer_config.ini"
           if (-Not (Test-Path $env:ProgramData\AnyViewer)) {
-            New-Item -ItemType Directory -Path $env:ProgramData\AnyViewer -Force | Out-Null
+              New-Item -ItemType Directory -Path $env:ProgramData\AnyViewer -Force | Out-Null
           }
-          @"
-[general]
-password=bear
-"@ | Set-Content -Path $configPath -Encoding ASCII
+          # Create config file with password
+          Set-Content -Path $configPath -Value "[general]`npassword=bear" -Encoding ASCII
 
       - name: Start AnyViewer
         run: |
@@ -33,6 +32,7 @@ password=bear
           Start-Sleep -s 15
 
       - name: Show Cloud PC Info
+        shell: pwsh
         run: |
           Write-Output "💻 Your personal cloud computer is ready!"
           Write-Output "🖥️ Specs:"
@@ -40,6 +40,7 @@ password=bear
           Write-Output "   • RAM: 8–16 GB"
           Write-Output "   • Storage: 256 GB (C:) + smaller D: drive"
           Write-Output "   • CPU: AMD EPYC (2–4 vCores)"
+          
           # Try to read Device ID from registry
           $deviceId = (Get-ItemProperty "HKLM:\SOFTWARE\AnyViewer").DeviceID 2>$null
           if ($deviceId) {
@@ -51,10 +52,10 @@ password=bear
           Write-Output "📱 Connect using AnyViewer on your PC or phone."
 
       - name: Keep Alive for 6 Hours
+        shell: pwsh
         run: |
           $hours = 6
           $minutes = $hours * 60
           for ($i = 1; $i -le $minutes; $i++) {
             Write-Output "⏳ [$i/$minutes] Your cloud computer is still running..."
             Start-Sleep -Seconds 60
-          }
