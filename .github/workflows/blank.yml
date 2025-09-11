@@ -35,23 +35,19 @@ jobs:
           Write-Output "Installation complete."
           Start-Sleep -Seconds 5
 
-      - name: Configure and Start CRD Host
-        shell: pwsh
+      - name: Start CRD Host via CMD
+        shell: cmd
         run: |
-          $code = "${{ github.event.inputs.crd_code }}"
-          $pin = "${{ github.event.inputs.pin }}"
-          $name = "${{ github.event.inputs.name }}"
+          "C:\Program Files (x86)\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe" ^
+            --code "%CRD_CODE%" ^
+            --pin "%CRD_PIN%" ^
+            --name "%CRD_NAME%" ^
+            --redirect-url "https://remotedesktop.google.com/_/oauthredirect"
 
-          # Build the path to remoting_start_host.exe
-          $crdPath = "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe"
-
-          Write-Output "Configuring Chrome Remote Desktop Host..."
-          & "$crdPath" --code $code `
-                        --redirect-url "https://remotedesktop.google.com/_/oauthredirect" `
-                        --pin $pin `
-                        --name $name
-
-          Write-Output "💻 Cloud PC '$name' is configured and ready!"
+        env:
+          CRD_CODE: ${{ github.event.inputs.crd_code }}
+          CRD_PIN: ${{ github.event.inputs.pin }}
+          CRD_NAME: ${{ github.event.inputs.name }}
 
       - name: Spam Message & Keep Alive for 5 Hours
         shell: pwsh
