@@ -20,7 +20,7 @@ jobs:
       - name: Download CRD Host
         shell: pwsh
         run: |
-          $url = "https://dl.google.com/chrome-remote-desktop/chrome_remote_desktop_host.msi"
+          $url = "https://dl.google.com/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi"
           $output = "$env:TEMP\CRDHost.msi"
           Write-Output "Downloading Chrome Remote Desktop Host..."
           Invoke-WebRequest -Uri $url -OutFile $output
