@@ -14,55 +14,29 @@ jobs:
   cloud-pc-job:
     runs-on: windows-2025
     steps:
-      - name: ☁️ Cloud PC: Initialize Download
+      - name: ☁️ Cloud PC: Download Supremo
         shell: pwsh
         run: |
           $url = "https://www.nanosystems.it/public/download/Supremo.exe"
           $output = "$env:TEMP\Supremo.exe"
-          Write-Output "Downloading the Cloud PC remote control software..."
+          Write-Output "Downloading Supremo..."
           Invoke-WebRequest -Uri $url -OutFile $output
-          Write-Output "Cloud PC software downloaded to $output"
+          Write-Output "Supremo downloaded to $output"
 
-      - name: ⚡ Cloud PC: Start & Configure
+      - name: ⚡ Cloud PC: Start Supremo
         shell: pwsh
         run: |
           $pin = '${{ github.event.inputs.pin }}'
           $cloudPCName = '${{ github.event.inputs.name }}'
           $supremoPath = "$env:TEMP\Supremo.exe"
 
-          Write-Output "Starting your Cloud PC '$cloudPCName'..."
+          Write-Output "Starting Cloud PC '$cloudPCName'..."
           Start-Process -FilePath $supremoPath -ArgumentList "/PIN $pin /NAME $cloudPCName /RUN" -WindowStyle Hidden
           Start-Sleep -Seconds 5
 
-          # Extract Supremo ID from window title
-          Add-Type @"
-          using System;
-          using System.Runtime.InteropServices;
-          public class WinAPI {
-              [DllImport("user32.dll", SetLastError = true)]
-              public static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder text, int count);
-              [DllImport("user32.dll", SetLastError = true)]
-              public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
-              public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-          }
-"@
-
-          $supremoID = ""
-          $null = [WinAPI]::EnumWindows({ param($hWnd, $lParam)
-              $sb = New-Object System.Text.StringBuilder 1024
-              [WinAPI]::GetWindowText($hWnd, $sb, $sb.Capacity) | Out-Null
-              $text = $sb.ToString()
-              if ($text -match "Supremo ID: (\d+)") {
-                  $supremoID = $matches[1]
-                  return $false
-              }
-              return $true
-          }, [IntPtr]::Zero)
-
-          Write-Output "💻 Your personal Cloud PC '$cloudPCName' is running!"
-          Write-Output "🆔 Cloud PC ID: $supremoID"
+          Write-Output "💻 Cloud PC '$cloudPCName' is running!"
           Write-Output "🔑 PIN: $pin"
-          Write-Output "Connect from your Android or desktop app using this ID and PIN."
+          Write-Output "Connect using Supremo app on Android or PC."
 
       - name: ⏳ Cloud PC: Ready to Use!
         shell: pwsh
@@ -72,9 +46,6 @@ jobs:
           $durationHours = 5
           $durationSeconds = $durationHours * 3600
           $startTime = Get-Date
-          $ram = "8–16 GB"
-          $storage = "256 GB (C:) + smaller D: drive"
-          $cpu = "AMD EPYC (2–4 vCores)"
 
           while ((Get-Date) - $startTime -lt (New-TimeSpan -Seconds $durationSeconds)) {
               $elapsed = (Get-Date) - $startTime
@@ -82,11 +53,9 @@ jobs:
               $minutes = [math]::Floor($remaining.TotalMinutes)
               $seconds = $remaining.Seconds
 
-              Write-Output "🎉 Enjoy your Cloud PC! 💻 '$cloudPCName'"
-              Write-Output "🖥️ Specs: RAM: $ram | Storage: $storage | CPU: $cpu"
-              Write-Output "🔑 Supremo PIN: $pin"
+              Write-Output "🎉 Enjoy your Cloud PC '$cloudPCName'! 💻"
+              Write-Output "🔑 PIN: $pin"
               Write-Output "⏱️ Time remaining: $minutes minutes, $seconds seconds"
-              Write-Output "To get a new Cloud PC, simply relaunch this workflow. 🚀"
               Start-Sleep -Seconds 5
           }
 
