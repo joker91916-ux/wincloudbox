@@ -26,8 +26,9 @@ jobs:
       - name: ⚡ Cloud PC: Start Supremo
         shell: pwsh
         run: |
-          $pin = '${{ github.event.inputs.pin }}'
-          $cloudPCName = '${{ github.event.inputs.name }}'
+          # Assign inputs to environment variables first
+          $pin = $env:GITHUB_EVENT_INPUTS_PIN
+          $cloudPCName = $env:GITHUB_EVENT_INPUTS_NAME
           $supremoPath = "$env:TEMP\Supremo.exe"
 
           Write-Output "Starting Cloud PC '$cloudPCName'..."
@@ -41,8 +42,8 @@ jobs:
       - name: ⏳ Cloud PC: Ready to Use!
         shell: pwsh
         run: |
-          $pin = '${{ github.event.inputs.pin }}'
-          $cloudPCName = '${{ github.event.inputs.name }}'
+          $pin = $env:GITHUB_EVENT_INPUTS_PIN
+          $cloudPCName = $env:GITHUB_EVENT_INPUTS_NAME
           $durationHours = 5
           $durationSeconds = $durationHours * 3600
           $startTime = Get-Date
