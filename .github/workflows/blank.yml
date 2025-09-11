@@ -18,65 +18,65 @@ jobs:
       PC_NAME: ${{ github.event.inputs.pc_name }}
     steps:
       - name: ☁️ Cloud PC: Set PC Name
-        shell: cmd
+        shell: powershell
         run: |
-          powershell -Command "Rename-Computer -NewName '%PC_NAME%' -Force -Restart:$false"
-          echo PC name set to %PC_NAME%
+          Rename-Computer -NewName $env:PC_NAME -Force -Restart:$false
+          Write-Output "PC name set to $env:PC_NAME"
 
       - name: ⚡ Cloud PC: Create CloudPCUSER
-        shell: cmd
+        shell: powershell
         run: |
-          net user CloudPCUSER WindowsCloudPC#2025 /add
-          net localgroup Administrators CloudPCUSER /add
-          net localgroup "Remote Desktop Users" CloudPCUSER /add
-          echo CloudPCUSER created and added to Administrators & Remote Desktop Users
+          $username = "CloudPCUSER"
+          $password = "WindowsCloudPC#2025"
+          if (-not (Get-LocalUser -Name $username -ErrorAction SilentlyContinue)) {
+              New-LocalUser -Name $username -Password (ConvertTo-SecureString $password -AsPlainText -Force) -FullName "Cloud PC User"
+              Add-LocalGroupMember -Group "Administrators" -Member $username
+              Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
+              Write-Output "User '$username' created and added to Administrators & Remote Desktop Users groups"
+          } else {
+              Write-Output "User '$username' already exists"
+          }
 
       - name: 🌐 Cloud PC: Install Tailscale
-        shell: cmd
+        shell: powershell
         run: |
-          powershell -Command "Invoke-WebRequest -Uri 'https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe' -OutFile '%TEMP%\tailscale.exe'"
-          msiexec /i "%TEMP%\tailscale.exe" /quiet /norestart
-          echo Tailscale installed
+          $installer = "$env:TEMP\tailscale-setup.exe"
+          Invoke-WebRequest "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile $installer
+          Start-Process msiexec.exe -ArgumentList "/i `"$installer`" /quiet /norestart" -Wait
+          Write-Output "Tailscale installed"
 
       - name: 🔑 Cloud PC: Authenticate Tailscale
-        shell: cmd
+        shell: powershell
         run: |
-          "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" up --authkey %TAILSCALE_AUTH_KEY% --hostname %COMPUTERNAME%
-          echo Tailscale node authenticated
+          $authKey = $env:TAILSCALE_AUTH_KEY
+          Start-Process "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" -ArgumentList "up --authkey $authKey --hostname $env:COMPUTERNAME" -Wait
+          Write-Output "Tailscale node authenticated"
 
       - name: 🖥️ Cloud PC: Enable RDP
-        shell: cmd
+        shell: powershell
         run: |
-          powershell -Command "Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0"
-          powershell -Command "Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'"
-          echo Remote Desktop enabled
+          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Write-Output "Remote Desktop enabled"
 
-      - name: ⏳ Cloud PC: Keep Alive & Ready
-        shell: cmd
+      - name: ⏳ Cloud PC: Keep Alive Script
+        shell: powershell
         run: |
-          set USERNAME=CloudPCUSER
-          set PASSWORD=WindowsCloudPC#2025
-          set PC_NAME=%PC_NAME%
-          
-          rem Get Tailscale IP
-          for /f "tokens=*" %%i in ('"C:\Program Files (x86)\Tailscale IPN\tailscale.exe" ip -4') do set TAILSCALE_IP=%%i
-          for /f "tokens=2 delims=:" %%i in ('"C:\Program Files (x86)\Tailscale IPN\tailscale.exe" status ^| findstr hostname:') do set TAILSCALE_NODE=%%i
+          $username = "CloudPCUSER"
+          $password = "WindowsCloudPC#2025"
+          $pcName = $env:PC_NAME
 
-          set /a ENDTIME=%TIME:~0,2%*3600 + %TIME:~3,2%*60 + %TIME:~6,2% + 18000
+          $tailscaleIP = & "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" ip -4 | ForEach-Object { $_.Trim() }
+          $tailscaleNodeName = & "C:\Program Files (x86)\Tailscale IPN\tailscale.exe" status | Select-String "hostname:" | ForEach-Object { ($_ -split ":")[1].Trim() }
 
-          :LOOP
-          echo 🎉 Your personal Cloud PC '%PC_NAME%' is ready!
-          echo 🔑 Login user: %USERNAME%
-          echo 💻 Password: %PASSWORD%
-          echo 🌐 Tailscale IP: %TAILSCALE_IP%
-          echo 📛 Tailscale Node Name: %TAILSCALE_NODE%
-          echo Connect via RDP using the above credentials.
-          timeout /t 60 >nul
-
-          rem Repeat until 5 hours have passed
-          for /f "tokens=1-3 delims=:." %%a in ("%time%") do (
-              set /a CURTIME=%%a*3600 + %%b*60 + %%c
-          )
-          if %CURTIME% LSS %ENDTIME% goto LOOP
-
-          echo ⏰ 5 hours reached. Cloud PC job completed. ✅
+          $endTime = (Get-Date).AddHours(5)
+          while ((Get-Date) -lt $endTime) {
+              Write-Output "🎉 Your personal Cloud PC '$pcName' is ready!"
+              Write-Output "🔑 Login user: $username"
+              Write-Output "💻 Password: $password"
+              Write-Output "🌐 Tailscale IP: $tailscaleIP"
+              Write-Output "📛 Tailscale Node Name: $tailscaleNodeName"
+              Write-Output "Connect via RDP using the above credentials."
+              Start-Sleep -Seconds 60
+          }
+          Write-Output "⏰ 5 hours reached. Cloud PC job completed. ✅"
