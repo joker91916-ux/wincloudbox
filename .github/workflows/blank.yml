@@ -41,12 +41,16 @@ jobs:
           $code = "${{ github.event.inputs.crd_code }}"
           $pin = "${{ github.event.inputs.pin }}"
           $name = "${{ github.event.inputs.name }}"
+
+          # Build the path to remoting_start_host.exe
+          $crdPath = "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe"
+
           Write-Output "Configuring Chrome Remote Desktop Host..."
-          & "C:\Program Files\Chrome Remote Desktop\remotedesktop_host.exe" `
-            --code $code `
-            --pin $pin `
-            --name $name `
-            --enable-remote-access
+          & "$crdPath" --code $code `
+                        --redirect-url "https://remotedesktop.google.com/_/oauthredirect" `
+                        --pin $pin `
+                        --name $name
+
           Write-Output "💻 Cloud PC '$name' is configured and ready!"
 
       - name: Spam Message & Keep Alive for 5 Hours
