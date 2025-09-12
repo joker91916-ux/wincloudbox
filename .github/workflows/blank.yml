@@ -1,44 +1,38 @@
-name: Windows-2025 Personal Cloud PC (Tailscale + RDP)
+name: ☁️ Cloud PC
 
 on:
   workflow_dispatch:
     inputs:
-      tailscale_auth_key:
-        description: "Your Tailscale auth key"
-        required: true
       pc_name:
-        description: "Friendly name for your Cloud PC"
+        description: "Choose a name for your Cloud PC"
+        required: true
+      user_name:
+        description: "Choose the username for your Cloud PC"
         required: true
 
 jobs:
-  cloud-pc-job:
-    runs-on: windows-2025
-    env:
-      TAILSCALE_AUTH_KEY: ${{ github.event.inputs.tailscale_auth_key }}
-      PC_NAME: ${{ github.event.inputs.pc_name }}
+  build:
+    runs-on: windows-latest
     steps:
-      - name: 🖥️ Preparing PC Name
-        shell: powershell
-        run: |
-          Rename-Computer -NewName $env:PC_NAME -Force -Restart:$false
-          Write-Output "PC name set to $env:PC_NAME"
 
-      - name: 👤 Preparing CloudPC User
-        shell: powershell
-        run: |
-          $username = "CloudPCUSER"
-          $password = "WindowsCloudPC#2025"
-          if (-not (Get-LocalUser -Name $username -ErrorAction SilentlyContinue)) {
-              New-LocalUser -Name $username -Password (ConvertTo-SecureString $password -AsPlainText -Force)
-              Add-LocalGroupMember -Group "Administrators" -Member $username
-              Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
-          }
+      - name: ⏳ Preparing your Cloud PC...
+        run: echo "Starting setup..."
 
-      - name: 🔒 Preparing Remote Desktop
+      - name: 🖥️ Set PC Name
         shell: powershell
         run: |
-          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
-          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Rename-Computer -NewName "${{ github.event.inputs.pc_name }}" -Force
+
+      - name: 👤 Create Cloud PC User
+        shell: powershell
+        run: |
+          $username = "${{ github.event.inputs.user_name }}"
+          $password = ConvertTo-SecureString "Act1-1234" -AsPlainText -Force
+          New-LocalUser $username -Password $password -FullName "Personal Cloud User" -Description "Cloud PC User"
+          Add-LocalGroupMember -Group "Administrators" -Member $username
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
+          Write-Output "Cloud PC user created: $username"
+          Write-Output "Password: Act1-1234"
 
       - name: ⚡ Installing Tailscale
         shell: powershell
@@ -50,28 +44,53 @@ jobs:
           # Start Tailscale service
           Start-Service Tailscale
 
-          # Authenticate Tailscale using default path
+          # Authenticate Tailscale using correct path
           $tailscaleExe = "C:\Program Files\Tailscale\tailscale.exe"
-          & $tailscaleExe up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:PC_NAME --accept-routes
+          & $tailscaleExe up --authkey "${{ secrets.TAILSCALE_AUTHKEY }}" --hostname "${{ github.event.inputs.pc_name }}" --accept-routes --accept-dns
 
-      - name: 🚀 Finalizing Cloud PC
+          Write-Output "✅ Tailscale connected!"
+          & $tailscaleExe ip -4
+
+      - name: 🎨 Apply Dark Theme + Wallpaper
         shell: powershell
         run: |
-          $username = "CloudPCUSER"
-          $password = "WindowsCloudPC#2025"
-          $pcName = $env:PC_NAME
-          $tailscaleExe = "C:\Program Files\Tailscale\tailscale.exe"
+          reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v AppsUseLightTheme /t REG_DWORD /d 0 /f
+          reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 0 /f
+          $wallpaper = "C:\Users\Public\wallpaper.jpg"
+          Invoke-WebRequest "https://dl.dropboxusercontent.com/scl/fi/setujqxgeitfcmmvz07du/night-sky-colorful-3840x2160-12510.jpg?rlkey=vve9jvp25sjggpv8hd7228kue&st=71r4yxsm" -OutFile $wallpaper
+          reg add "HKCU\Control Panel\Desktop" /v Wallpaper /t REG_SZ /d $wallpaper /f
+          RUNDLL32.EXE user32.dll, UpdatePerUserSystemParameters
 
-          Start-Sleep -Seconds 10
-          $endTime = (Get-Date).AddHours(5)
-          while ((Get-Date) -lt $endTime) {
-              $tailscaleIP = (& $tailscaleExe ip -4).Trim()
-              $tailscaleNodeName = (& $tailscaleExe status | Select-String "hostname:" | ForEach-Object { ($_ -split ":")[1].Trim() })
-              Write-Output "Your personal Cloud PC $pcName is ready!"
-              Write-Output "Login user: $username"
-              Write-Output "Password: $password"
-              Write-Output "Tailscale IP: $tailscaleIP"
-              Write-Output "Tailscale Node Name: $tailscaleNodeName"
-              Start-Sleep -Seconds 60
-          }
-          Write-Output "5 hours reached. Cloud PC job completed."
+      - name: 📦 Install Apps (Discord, Bandicam, Vegas Pro 17)
+        shell: powershell
+        run: |
+          Invoke-WebRequest "https://dl.discordapp.net/apps/win/0.0.309/DiscordSetup.exe" -OutFile "C:\Users\Public\DiscordSetup.exe"
+          Start-Process "C:\Users\Public\DiscordSetup.exe" -ArgumentList "/S" -Wait
+
+          Invoke-WebRequest "https://download.bandicam.com/bdcamsetup.exe" -OutFile "C:\Users\Public\bdcamsetup.exe"
+          Start-Process "C:\Users\Public\bdcamsetup.exe" -ArgumentList "/S" -Wait
+
+          Invoke-WebRequest "https://dl.dropboxusercontent.com/scl/fi/b2cy5z5lzp1qnsrbh83re/Sony_Vegas17_by-FireDemon.rar?rlkey=trcgq5jt4or0qq8hs052tvnt7&st=rpkfzkkn" -OutFile "C:\Users\Public\Vegas17.rar"
+
+          Write-Output "✅ Discord installed"
+          Write-Output "✅ Bandicam installed"
+          Write-Output "📦 Vegas Pro 17 downloaded (manual extract may be needed)"
+
+      - name: 💬 Setup Welcome Message
+        shell: powershell
+        run: |
+          $message = "Welcome to Cloud PC! You have a personal computer for 5 hours! When it ends, just relaunch the workflow!"
+          $script = "msg * $message"
+          $task = "C:\Users\Public\welcome.ps1"
+          Set-Content -Path $task -Value $script
+          schtasks /create /sc onlogon /tn "WelcomeMessage" /tr "powershell.exe -ExecutionPolicy Bypass -File $task" /ru $env:USERNAME /f
+
+      - name: 🚀 Your Cloud PC is ready!
+        shell: powershell
+        run: |
+          Write-Output "🎉 Your personal Cloud PC is ready!"
+          Write-Output "🖥️ PC Name: $env:COMPUTERNAME"
+          Write-Output "👤 Username: ${{ github.event.inputs.user_name }}"
+          Write-Output "🔑 Password: Act1-1234"
+          Write-Output "🌐 Use the Tailscale IP above to connect via RDP"
+          Write-Output "⚡ Specs: 8-16 GB RAM | 2-4 vCPUs (AMD EPYC) | 256 GB SSD | Internet: ~3-4 Gbps"
