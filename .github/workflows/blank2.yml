@@ -1,0 +1,78 @@
+name: Windows-2025 Personal Cloud PC (Tailscale + RDP)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tailscale_auth_key:
+        description: "Your Tailscale auth key"
+        required: true
+      pc_name:
+        description: "Friendly name for your Cloud PC"
+        required: true
+
+jobs:
+  cloud-pc-job:
+    runs-on: windows-2025
+    env:
+      TAILSCALE_AUTH_KEY: ${{ github.event.inputs.tailscale_auth_key }}
+      PC_NAME: ${{ github.event.inputs.pc_name }}
+    steps:
+      - name: 🖥️ Preparing PC Name
+        shell: powershell
+        run: |
+          Rename-Computer -NewName $env:PC_NAME -Force -Restart:$false
+          Write-Output "PC name set to $env:PC_NAME"
+
+      - name: 👤 Preparing CloudPC User
+        shell: powershell
+        run: |
+          $username = "CloudPCUSER"
+          $password = "WindowsCloudPC#2025"
+          if (-not (Get-LocalUser -Name $username -ErrorAction SilentlyContinue)) {
+              New-LocalUser -Name $username -Password (ConvertTo-SecureString $password -AsPlainText -Force)
+              Add-LocalGroupMember -Group "Administrators" -Member $username
+              Add-LocalGroupMember -Group "Remote Desktop Users" -Member $username
+          }
+
+      - name: 🔒 Preparing Remote Desktop
+        shell: powershell
+        run: |
+          Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+      - name: ⚡ Installing Tailscale
+        shell: powershell
+        run: |
+          $tailscaleInstaller = "$env:TEMP\tailscale-setup.exe"
+          Invoke-WebRequest "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile $tailscaleInstaller
+          Start-Process $tailscaleInstaller -ArgumentList "/quiet /norestart" -Wait
+
+          # Start Tailscale service
+          Start-Service Tailscale
+
+          # Authenticate Tailscale using default path
+          $tailscaleExe = "C:\Program Files\Tailscale\tailscale.exe"
+          & $tailscaleExe up --authkey $env:TAILSCALE_AUTH_KEY --hostname $env:PC_NAME --accept-routes
+
+      - name: 🚀 Finalizing Cloud PC
+        shell: powershell
+        run: |
+          $username = "CloudPCUSER"
+          $password = "WindowsCloudPC#2025"
+          $pcName = $env:PC_NAME
+          $tailscaleExe = "C:\Program Files\Tailscale\tailscale.exe"
+
+          Start-Sleep -Seconds 10
+          $endTime = (Get-Date).AddHours(5)
+          while ((Get-Date) -lt $endTime) {
+              $tailscaleIP = (& $tailscaleExe ip -4).Trim()
+              $tailscaleNodeName = (& $tailscaleExe status | Select-String "hostname:" | ForEach-Object { ($_ -split ":")[1].Trim() })
+              Write-Output "Your personal Cloud PC $pcName is ready!"
+              Write-Output "Login user: $username"
+              Write-Output "Password: $password"
+              Write-Output "Tailscale IP: $tailscaleIP"
+              Write-Output "Tailscale Node Name: $tailscaleNodeName"
+              Start-Sleep -Seconds 60
+          }
+          Write-Output "5 hours reached. Cloud PC job completed."
+          
