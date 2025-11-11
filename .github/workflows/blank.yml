@@ -12,7 +12,7 @@ on:
 
 jobs:
   cloud-pc-job:
-    runs-on: windows-2025
+    runs-on: windows-11-arm
     env:
       TAILSCALE_AUTH_KEY: ${{ github.event.inputs.tailscale_auth_key }}
       PC_NAME: ${{ github.event.inputs.pc_name }}
